@@ -1,53 +1,100 @@
 import React, { useState, useEffect, useRef } from 'react';
 import { generateQuestions, getLessonTopics, generateQuestionsFromImage } from './services/geminiService';
 import { getSavedExams, deleteExam, saveExam, exportExamToJson, importExamFromJson } from './services/storageService';
-import { Question, AppConfig, Difficulty, QuestionType, Curriculum, SavedExam } from './types';
+import { Question, AppConfig, Difficulty, QuestionType, Curriculum, SavedExam, AppMode } from './types';
 import PresentationView from './components/PresentationView';
 import ExportView from './components/ExportView';
-import { BookOpen, Presentation, FileText, Loader2, Sparkles, Check, School, BookMarked, RefreshCw, Cpu, Zap, Image as ImageIcon, Upload, Archive, Trash2, ChevronRight, X, Download, FileUp } from 'lucide-react';
-
-enum AppMode {
-  HOME = 'HOME',
-  PRESENTATION = 'PRESENTATION',
-  EXPORT = 'EXPORT'
-}
+import SimulationView from './components/SimulationView';
+import { BookOpen, Presentation, FileText, Loader2, Sparkles, Check, School, BookMarked, RefreshCw, Cpu, Zap, Image as ImageIcon, Upload, Archive, Trash2, ChevronRight, X, Download, FileUp, PlayCircle } from 'lucide-react';
 
 enum InputMethod {
     MANUAL = 'MANUAL',
     IMAGE = 'IMAGE'
 }
 
-// Data mẫu cho bộ sách "Kết nối tri thức"
+// Data mẫu cho bộ sách "Kết nối tri thức" - Cập nhật đầy đủ
 const KNTT_CURRICULUM: Curriculum = {
   "10": [
+    // Tập 1
     "Bài 1. Mệnh đề",
     "Bài 2. Tập hợp",
     "Bài 3. Bất phương trình bậc nhất hai ẩn",
     "Bài 4. Hệ bất phương trình bậc nhất hai ẩn",
     "Bài 5. Giá trị lượng giác của một góc từ 0 đến 180 độ",
-    "Bài 6. Hệ thức lượng trong tam giác"
+    "Bài 6. Hệ thức lượng trong tam giác",
+    "Bài 7. Các khái niệm mở đầu (Vectơ)",
+    "Bài 8. Tổng và hiệu của hai vectơ",
+    "Bài 9. Tích của một số với một vectơ",
+    "Bài 10. Vectơ trong mặt phẳng tọa độ",
+    "Bài 11. Tích vô hướng của hai vectơ",
+    "Bài 12. Số gần đúng và sai số",
+    "Bài 13. Các số đặc trưng đo xu thế trung tâm",
+    "Bài 14. Các số đặc trưng đo độ phân tán",
+    // Tập 2
+    "Bài 15. Hàm số",
+    "Bài 16. Hàm số bậc hai",
+    "Bài 17. Dấu của tam thức bậc hai",
+    "Bài 18. Phương trình quy về phương trình bậc hai",
+    "Bài 19. Phương pháp tọa độ trong mặt phẳng",
+    "Bài 20. Vị trí tương đối giữa hai đường thẳng. Góc và khoảng cách",
+    "Bài 21. Đường tròn trong mặt phẳng tọa độ",
+    "Bài 22. Ba đường conic",
+    "Bài 23. Quy tắc đếm",
+    "Bài 24. Hoán vị, chỉnh hợp và tổ hợp",
+    "Bài 25. Nhị thức Newton",
+    "Bài 26. Biến cố và định nghĩa cổ điển của xác suất",
+    "Bài 27. Thực hành tính xác suất theo định nghĩa cổ điển"
   ],
   "11": [
+    // Tập 1
     "Bài 1. Giá trị lượng giác của góc lượng giác",
     "Bài 2. Công thức lượng giác",
     "Bài 3. Hàm số lượng giác",
     "Bài 4. Phương trình lượng giác cơ bản",
+    "Bài 5. Dãy số",
+    "Bài 6. Cấp số cộng",
+    "Bài 7. Cấp số nhân",
+    "Bài 8. Mẫu số liệu ghép nhóm",
+    "Bài 9. Các số đặc trưng đo xu thế trung tâm",
+    "Bài 10. Đường thẳng và mặt phẳng trong không gian",
+    "Bài 11. Hai đường thẳng song song",
+    "Bài 12. Đường thẳng và mặt phẳng song song",
+    "Bài 13. Hai mặt phẳng song song",
+    "Bài 14. Phép chiếu song song",
+    "Bài 15. Giới hạn của dãy số",
+    "Bài 16. Giới hạn của hàm số",
+    "Bài 17. Hàm số liên tục",
+    // Tập 2
     "Bài 18. Lũy thừa với số mũ thực",
     "Bài 19. Logarit",
     "Bài 20. Hàm số mũ và hàm số logarit",
-    "Bài 21. Phương trình, bất phương trình mũ và logarit"
+    "Bài 21. Phương trình, bất phương trình mũ và logarit",
+    "Bài 22. Hai đường thẳng vuông góc",
+    "Bài 23. Đường thẳng vuông góc với mặt phẳng",
+    "Bài 24. Phép chiếu vuông góc. Góc giữa đường thẳng và mặt phẳng",
+    "Bài 25. Hai mặt phẳng vuông góc",
+    "Bài 26. Khoảng cách",
+    "Bài 27. Thể tích",
+    "Bài 28. Biến cố hợp, biến cố giao, biến cố độc lập",
+    "Bài 29. Công thức cộng xác suất",
+    "Bài 30. Công thức nhân xác suất",
+    "Bài 31. Định nghĩa và ý nghĩa của đạo hàm",
+    "Bài 32. Các quy tắc tính đạo hàm",
+    "Bài 33. Đạo hàm cấp hai"
   ],
   "12": [
+    // Tập 1
     "Bài 1. Tính đơn điệu và cực trị của hàm số",
     "Bài 2. Giá trị lớn nhất và giá trị nhỏ nhất của hàm số",
     "Bài 3. Đường tiệm cận của đồ thị hàm số",
-    "Bài 4. Khảo sát sự biến thiên và vẽ đồ thị hàm số",
-    "Bài 5. Ứng dụng đạo hàm để giải quyết một số vấn đề thực tiễn",
+    "Bài 4. Khảo sát sự biến thiên và vẽ đồ thị của hàm số",
+    "Bài 5. Ứng dụng đạo hàm để giải quyết một số vấn đề liên quan đến thực tiễn",
     "Bài 6. Vectơ trong không gian",
     "Bài 7. Hệ trục tọa độ trong không gian",
     "Bài 8. Biểu thức tọa độ của các phép toán vectơ",
     "Bài 9. Khoảng biến thiên và khoảng tứ phân vị của mẫu số liệu ghép nhóm",
     "Bài 10. Phương sai và độ lệch chuẩn của mẫu số liệu ghép nhóm",
+    // Tập 2
     "Bài 11. Nguyên hàm",
     "Bài 12. Tích phân",
     "Bài 13. Ứng dụng hình học của tích phân",
@@ -83,7 +130,7 @@ const App: React.FC = () => {
 
   const [config, setConfig] = useState<AppConfig>({
     grade: "11",
-    lesson: "Bài 18. Lũy thừa với số mũ thực",
+    lesson: KNTT_CURRICULUM["11"][0], // Use first lesson of grade 11 as default
     topics: [],
     difficulty: Difficulty.UNDERSTANDING,
     questionTypes: [QuestionType.MCQ],
@@ -107,7 +154,10 @@ const App: React.FC = () => {
   };
 
   useEffect(() => {
-    analyzeLesson(config.grade, config.lesson);
+    // Only analyze if manual mode and lesson is set
+    if (inputMethod === InputMethod.MANUAL) {
+        analyzeLesson(config.grade, config.lesson);
+    }
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
 
@@ -232,6 +282,16 @@ const App: React.FC = () => {
             examTitle={inputMethod === InputMethod.IMAGE ? 'Đề thi từ Ảnh' : config.lesson}
         />
     );
+  }
+
+  if (mode === AppMode.SIMULATION) {
+      return (
+          <SimulationView
+              questions={questions}
+              onBack={() => setMode(AppMode.HOME)}
+              examTitle={inputMethod === InputMethod.IMAGE ? 'Đề thi từ Ảnh' : config.lesson}
+          />
+      )
   }
 
   if (mode === AppMode.EXPORT) {
@@ -487,6 +547,7 @@ const App: React.FC = () => {
                           <option value={Difficulty.RECOGNITION}>Nhận biết (Dễ)</option>
                           <option value={Difficulty.UNDERSTANDING}>Thông hiểu (Trung bình)</option>
                           <option value={Difficulty.APPLICATION}>Vận dụng (Khá)</option>
+                          <option value={Difficulty.ADVANCED_APPLICATION}>Vận dụng cao (Khó)</option>
                           <option value={Difficulty.MIXED}>Hỗn hợp</option>
                         </select>
                         <div className="absolute right-3 top-3 pointer-events-none text-slate-400">
@@ -580,18 +641,24 @@ const App: React.FC = () => {
              )}
            </button>
         ) : (
-            <div className="grid grid-cols-2 gap-3">
+            <div className="grid grid-cols-3 gap-2">
                  <button
                     onClick={() => setMode(AppMode.PRESENTATION)}
-                    className="flex items-center justify-center h-12 bg-indigo-600 text-white rounded-xl font-bold shadow-lg active:scale-[0.98]"
+                    className="flex flex-col items-center justify-center h-12 bg-slate-700 text-white rounded-xl font-bold text-xs shadow-lg active:scale-[0.98]"
                   >
-                    <Presentation className="w-5 h-5 mr-2" /> Thi Thử
+                    <Presentation className="w-5 h-5 mb-0.5" /> Trình Chiếu
+                  </button>
+                 <button
+                    onClick={() => setMode(AppMode.SIMULATION)}
+                    className="flex flex-col items-center justify-center h-12 bg-indigo-600 text-white rounded-xl font-bold text-xs shadow-lg active:scale-[0.98]"
+                  >
+                    <PlayCircle className="w-5 h-5 mb-0.5" /> Thi Thử
                   </button>
                   <button
                     onClick={() => setMode(AppMode.EXPORT)}
-                    className="flex items-center justify-center h-12 bg-slate-700 text-white rounded-xl font-bold shadow-lg active:scale-[0.98]"
+                    className="flex flex-col items-center justify-center h-12 bg-slate-700 text-white rounded-xl font-bold text-xs shadow-lg active:scale-[0.98]"
                   >
-                    <FileText className="w-5 h-5 mr-2" /> Xuất File
+                    <FileText className="w-5 h-5 mb-0.5" /> Xuất File
                   </button>
             </div>
         )}
@@ -693,7 +760,7 @@ const DesktopActions = ({ isLoading, config, questions, handleGenerate, setMode,
         </button>
         
         {questions.length > 0 && !isLoading && (
-        <div className="grid grid-cols-2 gap-4 animate-fade-in-up">
+        <div className="grid grid-cols-3 gap-2 animate-fade-in-up">
             <button
             onClick={() => setMode(AppMode.PRESENTATION)}
             className="flex items-center justify-center py-3 bg-slate-700 hover:bg-slate-600 text-white rounded-xl font-medium transition"
@@ -701,10 +768,16 @@ const DesktopActions = ({ isLoading, config, questions, handleGenerate, setMode,
             <Presentation className="w-5 h-5 mr-2" /> Trình Chiếu
             </button>
             <button
+            onClick={() => setMode(AppMode.SIMULATION)}
+            className="flex items-center justify-center py-3 bg-indigo-600 hover:bg-indigo-500 text-white rounded-xl font-medium transition shadow-lg shadow-indigo-500/20"
+            >
+            <PlayCircle className="w-5 h-5 mr-2" /> Thi Thử
+            </button>
+            <button
             onClick={() => setMode(AppMode.EXPORT)}
             className="flex items-center justify-center py-3 bg-slate-700 hover:bg-slate-600 text-white rounded-xl font-medium transition"
             >
-            <FileText className="w-5 h-5 mr-2" /> Xuất Word / PDF
+            <FileText className="w-5 h-5 mr-2" /> Xuất File
             </button>
         </div>
         )}

@@ -9,7 +9,15 @@ export enum Difficulty {
   RECOGNITION = 'NB', // Nhan biet
   UNDERSTANDING = 'TH', // Thong hieu
   APPLICATION = 'VD', // Van dung
+  ADVANCED_APPLICATION = 'VDC', // Van dung cao
   MIXED = 'MIXED'
+}
+
+export enum AppMode {
+  HOME = 'HOME',
+  PRESENTATION = 'PRESENTATION',
+  EXPORT = 'EXPORT',
+  SIMULATION = 'SIMULATION' // New mode
 }
 
 // Removed MathTopic Enum as we now use dynamic strings from AI

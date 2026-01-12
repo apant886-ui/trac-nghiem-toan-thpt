@@ -1,7 +1,7 @@
 import React, { useState } from 'react';
 import { Question, QuestionType } from '../types';
 import MathText from './MathText';
-import { ChevronLeft, ChevronRight, CheckCircle, XCircle, Home, RotateCcw, Save, BarChart, Eye, EyeOff } from 'lucide-react';
+import { ChevronLeft, ChevronRight, CheckCircle, XCircle, Home, RotateCcw, Save, BarChart, Eye, EyeOff, Minus, Plus } from 'lucide-react';
 
 interface PresentationViewProps {
   questions: Question[];
@@ -17,8 +17,9 @@ const PresentationView: React.FC<PresentationViewProps> = ({ questions, onBack, 
   const [score, setScore] = useState(0);
   const [answeredMap, setAnsweredMap] = useState<Record<string, boolean>>({});
   
-  // NEW: State to toggle option text visibility
+  // State for UI controls
   const [showOptionText, setShowOptionText] = useState(true);
+  const [fontScale, setFontScale] = useState(4); // 1 to 5, default 4 (Large)
 
   const currentQ = questions[currentIndex];
 
@@ -71,12 +72,60 @@ const PresentationView: React.FC<PresentationViewProps> = ({ questions, onBack, 
       const d = diff.toLowerCase();
       if (d.includes('nhận biết')) return 'bg-green-100 text-green-700';
       if (d.includes('thông hiểu')) return 'bg-blue-100 text-blue-700';
+      if (d.includes('vận dụng cao')) return 'bg-purple-100 text-purple-700';
       if (d.includes('vận dụng')) return 'bg-orange-100 text-orange-700';
-      if (d.includes('cao')) return 'bg-red-100 text-red-700';
+      if (d.includes('cao')) return 'bg-purple-100 text-purple-700';
       return 'bg-slate-100 text-slate-600';
   };
 
-  // Calculate Progress
+  // Dynamic Styles based on Font Scale
+  const getDynamicStyles = () => {
+      switch (fontScale) {
+          case 1: // Small
+              return {
+                  question: 'text-xl',
+                  optionText: 'text-lg',
+                  optionIconSize: 'w-10 h-10',
+                  optionIconText: 'text-lg',
+                  gap: 'gap-3'
+              };
+          case 2: // Medium
+              return {
+                  question: 'text-2xl',
+                  optionText: 'text-xl',
+                  optionIconSize: 'w-12 h-12',
+                  optionIconText: 'text-xl',
+                  gap: 'gap-4'
+              };
+          case 3: // Large
+              return {
+                  question: 'text-3xl',
+                  optionText: 'text-2xl',
+                  optionIconSize: 'w-14 h-14',
+                  optionIconText: 'text-2xl',
+                  gap: 'gap-5'
+              };
+          case 4: // Extra Large (Default)
+              return {
+                  question: 'text-4xl',
+                  optionText: 'text-3xl',
+                  optionIconSize: 'w-16 h-16',
+                  optionIconText: 'text-3xl',
+                  gap: 'gap-6'
+              };
+          case 5: // Massive (Max)
+              return {
+                  question: 'text-5xl',
+                  optionText: 'text-5xl',
+                  optionIconSize: 'w-24 h-24',
+                  optionIconText: 'text-4xl',
+                  gap: 'gap-8'
+              };
+          default: return { question: 'text-3xl', optionText: 'text-2xl', optionIconSize: 'w-14 h-14', optionIconText: 'text-2xl', gap: 'gap-5' };
+      }
+  };
+
+  const styles = getDynamicStyles();
   const progress = ((currentIndex + 1) / questions.length) * 100;
 
   return (
@@ -93,7 +142,28 @@ const PresentationView: React.FC<PresentationViewProps> = ({ questions, onBack, 
             </div>
         </div>
 
-        <div className="flex items-center space-x-3 md:space-x-4">
+        <div className="flex items-center space-x-2 md:space-x-3">
+            {/* Font Size Controls */}
+            <div className="hidden md:flex items-center bg-slate-100 rounded-full p-1 mr-2">
+                <button 
+                    onClick={() => setFontScale(Math.max(1, fontScale - 1))}
+                    disabled={fontScale === 1}
+                    className="p-1.5 rounded-full hover:bg-white hover:text-indigo-600 text-slate-500 disabled:opacity-30 transition"
+                    title="Giảm cỡ chữ"
+                >
+                    <Minus className="w-4 h-4" />
+                </button>
+                <span className="w-6 text-center text-xs font-bold text-slate-600">{fontScale}</span>
+                <button 
+                    onClick={() => setFontScale(Math.min(5, fontScale + 1))}
+                    disabled={fontScale === 5}
+                    className="p-1.5 rounded-full hover:bg-white hover:text-indigo-600 text-slate-500 disabled:opacity-30 transition"
+                    title="Tăng cỡ chữ"
+                >
+                    <Plus className="w-4 h-4" />
+                </button>
+            </div>
+
             {/* Score Badge */}
             <div className="flex items-center space-x-2 bg-indigo-50 px-3 py-1.5 md:px-4 md:py-2 rounded-full border border-indigo-100">
                 <span className="text-sm md:text-lg text-indigo-800 font-bold whitespace-nowrap">
@@ -102,7 +172,6 @@ const PresentationView: React.FC<PresentationViewProps> = ({ questions, onBack, 
             </div>
 
             {/* Action Buttons */}
-            {/* Toggle Text Visibility */}
             <button 
                 onClick={() => setShowOptionText(!showOptionText)}
                 className={`p-2 rounded-full transition ${showOptionText ? 'text-slate-500 hover:text-indigo-600 hover:bg-indigo-50' : 'text-slate-400 hover:text-indigo-600 hover:bg-slate-100'}`}
@@ -166,37 +235,40 @@ const PresentationView: React.FC<PresentationViewProps> = ({ questions, onBack, 
             
             {/* Question Content */}
             <div className="mb-4 md:mb-8">
-                <div className="text-xl md:text-4xl lg:text-5xl font-semibold text-slate-900 leading-snug">
-                   <MathText content={currentQ.content} block className="text-xl md:text-4xl lg:text-5xl" />
+                <div className={`${styles.question} font-semibold text-slate-900 leading-snug transition-all`}>
+                   <MathText content={currentQ.content} block className={styles.question} />
                 </div>
             </div>
 
             {/* Options / Interaction Area */}
             <div className="flex-1 w-full">
                 {currentQ.type === QuestionType.MCQ || currentQ.type === QuestionType.TRUE_FALSE ? (
-                <div className="grid grid-cols-1 md:grid-cols-2 gap-3 md:gap-5 lg:gap-8 w-full">
+                <div className={`grid grid-cols-1 md:grid-cols-2 ${styles.gap} w-full`}>
                     {currentQ.options?.map((opt, idx) => {
                     const isSelected = selectedOptionId === opt.id;
                     const isCorrect = opt.id === currentQ.correctOptionId;
                     const isAnswered = !!answeredMap[currentQ.id];
                     
                     let borderClass = 'border-slate-200 hover:border-indigo-400 hover:bg-indigo-50';
-                    // Massive Icon Sizes for Large Screens
-                    let icon = <div className="w-12 h-12 md:w-20 md:h-20 lg:w-24 lg:h-24 rounded-full border-[2px] md:border-[3px] border-slate-400 text-slate-700 flex items-center justify-center font-bold text-xl md:text-4xl lg:text-5xl transition-colors shrink-0">{String.fromCharCode(65+idx)}</div>;
+                    
+                    // Dynamic Icon Container
+                    const iconBaseClass = `${styles.optionIconSize} rounded-full flex items-center justify-center font-bold ${styles.optionIconText} transition-all shrink-0`;
+
+                    let icon = <div className={`${iconBaseClass} border-[2px] md:border-[3px] border-slate-400 text-slate-700`}>{String.fromCharCode(65+idx)}</div>;
 
                     if (isAnswered) {
                         if (isCorrect) {
                         borderClass = 'border-green-500 bg-green-50 ring-4 ring-green-500/30';
-                        icon = <CheckCircle className="w-12 h-12 md:w-20 md:h-20 lg:w-24 lg:h-24 text-green-600 shrink-0" />;
+                        icon = <CheckCircle className={`${styles.optionIconSize} text-green-600 shrink-0`} />;
                         } else if (isSelected && !isCorrect) {
                         borderClass = 'border-red-500 bg-red-50';
-                        icon = <XCircle className="w-12 h-12 md:w-20 md:h-20 lg:w-24 lg:h-24 text-red-600 shrink-0" />;
+                        icon = <XCircle className={`${styles.optionIconSize} text-red-600 shrink-0`} />;
                         } else {
                         borderClass = 'opacity-50 border-slate-200';
                         }
                     } else if (isSelected) {
                         borderClass = 'border-indigo-600 bg-indigo-50 ring-4 ring-indigo-600/30';
-                        icon = <div className="w-12 h-12 md:w-20 md:h-20 lg:w-24 lg:h-24 rounded-full bg-indigo-600 text-white flex items-center justify-center font-bold text-xl md:text-4xl lg:text-5xl shrink-0">{String.fromCharCode(65+idx)}</div>;
+                        icon = <div className={`${iconBaseClass} bg-indigo-600 text-white`}>{String.fromCharCode(65+idx)}</div>;
                     }
 
                     // Determine text color for better contrast
@@ -217,8 +289,7 @@ const PresentationView: React.FC<PresentationViewProps> = ({ questions, onBack, 
                           <div className="shrink-0 mr-3 md:mr-5 lg:mr-8">
                               {icon}
                           </div>
-                          {/* UPDATED: Changed w-full to flex-1 min-w-0 to prevent layout breakage on large text */}
-                          <div className={`text-xl md:text-4xl lg:text-5xl font-medium leading-relaxed break-words flex-1 min-w-0 ${textColorClass}`}>
+                          <div className={`${styles.optionText} font-medium leading-relaxed break-words flex-1 min-w-0 ${textColorClass} transition-all`}>
                               {showOptionText ? <MathText content={opt.content} /> : <span className="opacity-0">...</span>}
                           </div>
                         </button>
@@ -252,7 +323,7 @@ const PresentationView: React.FC<PresentationViewProps> = ({ questions, onBack, 
                     <BookOpen className="w-6 h-6 md:w-8 md:h-8 mr-3" />
                     Lời giải chi tiết:
                 </h3>
-                <div className="text-base md:text-xl text-slate-800 leading-relaxed">
+                <div className={`text-base ${fontScale >= 3 ? 'md:text-2xl' : 'md:text-lg'} text-slate-800 leading-relaxed`}>
                     <MathText content={currentQ.explanation} block />
                 </div>
                 </div>
@@ -295,6 +366,15 @@ const PresentationView: React.FC<PresentationViewProps> = ({ questions, onBack, 
            <span className="hidden md:inline">Câu sau</span>
            <ChevronRight className="w-5 h-5 md:w-6 md:h-6 ml-1" />
          </button>
+      </div>
+      
+      {/* Mobile Controls Overlay (Optional if screen is small) */}
+      <div className="md:hidden fixed top-16 right-2 flex flex-col space-y-2 z-50">
+        <div className="bg-white/90 backdrop-blur border border-slate-200 rounded-lg shadow-lg p-1 flex flex-col items-center">
+            <button onClick={() => setFontScale(Math.min(5, fontScale + 1))} disabled={fontScale === 5} className="p-2 text-indigo-600 disabled:opacity-30"><Plus className="w-5 h-5" /></button>
+            <span className="text-xs font-bold text-slate-500">{fontScale}</span>
+            <button onClick={() => setFontScale(Math.max(1, fontScale - 1))} disabled={fontScale === 1} className="p-2 text-indigo-600 disabled:opacity-30"><Minus className="w-5 h-5" /></button>
+        </div>
       </div>
     </div>
   );

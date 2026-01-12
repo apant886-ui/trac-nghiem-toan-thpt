@@ -9,13 +9,14 @@ const formatDifficulty = (d: Difficulty): string => {
     case Difficulty.RECOGNITION: return "Mức độ Nhận biết (Dễ)";
     case Difficulty.UNDERSTANDING: return "Mức độ Thông hiểu (Trung bình)";
     case Difficulty.APPLICATION: return "Mức độ Vận dụng (Khá)";
-    case Difficulty.MIXED: return "Hỗn hợp các mức độ từ Nhận biết đến Vận dụng thấp";
+    case Difficulty.ADVANCED_APPLICATION: return "Mức độ Vận dụng cao (Khó - Tư duy tổng hợp)";
+    case Difficulty.MIXED: return "Hỗn hợp các mức độ từ Nhận biết đến Vận dụng cao";
     default: return "Trung bình";
   }
 };
 
 const getClient = () => {
-  const apiKey = process.env.GEMINI_API_KEY;
+  const apiKey = process.env.API_KEY;
   if (!apiKey) throw new Error("API Key is missing");
   return new GoogleGenAI({ apiKey });
 }
@@ -219,7 +220,7 @@ export const generateQuestionsFromImage = async (base64Image: string, quantity: 
     const prompt = `
         1. Phân tích nội dung Toán học trong bức ảnh này (đề bài, công thức, dạng toán).
         2. Tạo ra ${quantity} câu hỏi TƯƠNG TỰ về dạng toán và độ khó như trong ảnh (Remix đề bài). Thay đổi số liệu để tạo bài tập mới.
-        3. Xác định mức độ khó (Nhận biết/Thông hiểu/Vận dụng) cho từng câu.
+        3. Xác định mức độ khó (Nhận biết/Thông hiểu/Vận dụng/Vận dụng cao) cho từng câu.
         4. Định dạng đầu ra JSON tuân thủ chính xác schema và quy tắc LaTeX (double backslash).
     `;
 
